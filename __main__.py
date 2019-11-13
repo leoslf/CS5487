@@ -14,6 +14,7 @@ import scipy.stats
 from pprint import pprint
 
 from model import *
+from preprocessing import *
 from utils import (ClassificationConfig,
                    load_dataset,
                    dataset_slicing,
