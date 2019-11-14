@@ -1,6 +1,9 @@
 import os
 from os.path import dirname, realpath
 
+import functools
+from functools import partial, reduce
+
 import configparser
 import json
 
@@ -12,6 +15,27 @@ import scipy
 import scipy.io
 
 logger = logging.getLogger(__name__)
+
+def vectorize(f):
+    @functools.wraps(f)
+    def wraps(self, X, *argv, **kwargs):
+        return np.array(list(map(partial(f, self, *argv, **kwargs), X)))
+        # return np.apply_along_axis(partial(f, self), np.arange(len(X.shape))[1:], X, *argv, **kwargs)
+    return wraps
+
+def log(f):
+    @functools.wraps(f)
+    def wraps(self, *argv, **kwargs):
+        logger.debug(f.__name__)
+        return f(self, *argv, **kwargs)
+    return wraps
+
+def compose(*functions):
+    r""" Function Composition: :math:`(f_1 \circ \cdots \circ f_n)(x)` """
+    return reduce(lambda f, g: lambda x: g(f(x)), functions, lambda x: x)
+
+def methodgetter(obj, method_names):
+    return map(partial(getattr, obj), method_names)
 
 def working_dir(filename):
     return os.path.join(dirname(realpath(__file__)), filename)
@@ -27,6 +51,11 @@ def dataset_slicing(X, Y, indices_set, transpose=False, index_start = 0):
 
 def digit_visualization(X, Y):
     print (X.reshape((28, 28)).T, Y)
+
+def dump_dataset(X, Y):
+    for (x, y) in zip(X, Y.flatten()):
+        digit_visualization(x, y)
+
 
 def load_json(key, value):
     try:
@@ -66,7 +95,9 @@ class ClassificationConfig:
         """ Return profiles """
         profile_names = list(filter(lambda s: s.startswith("profile"), self.sections))
 
-        profiles = { name: self.classification.copy() for name in ["classification"] + profile_names }
+        # NOTE: Excluded section "classification"
+        # profiles = { name: self.classification.copy() for name in ["classification"] + profile_names }
+        profiles = { name: self.classification.copy() for name in profile_names }
 
         for name, profile in profiles.items():
             # Override the default properties

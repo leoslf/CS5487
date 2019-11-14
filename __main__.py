@@ -13,18 +13,24 @@ import scipy.stats
 
 from pprint import pprint
 
-from model import *
+from models import *
 from preprocessing import *
 from utils import (ClassificationConfig,
                    load_dataset,
                    dataset_slicing,
-                   digit_visualization)
+                   digit_visualization,
+                   dump_dataset)
 
 logger = logging.getLogger(__name__)
 
+
+def Model(name):
+    return globals()[name]
+
 if __name__ == "__main__":
     # Log Level
-    logging.basicConfig(level=logging.INFO)
+    # logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     # Load config
     config = ClassificationConfig("config.ini")
@@ -37,25 +43,21 @@ if __name__ == "__main__":
         digits_vec = digits_vec.T
         digits_label = digits_label.T
 
-        print (digits_vec.shape)
+        # print (digits_vec.shape)
 
         # trial
-        training_set, testing_set = [dataset_slicing(digits_vec, digits_label, indices_set, transpose=True, index_start = 1) for indices_set in [train_indices, test_indices]]
+        training_set, testing_set = [dataset_slicing(digits_vec, digits_label, indices_set, index_start = 1) for indices_set in [train_indices, test_indices]]
+        # print (training_set, testing_set)
 
-        np.set_printoptions(threshold=sys.maxsize, linewidth=200)
+        np.set_printoptions(precision = 2, suppress = True, threshold=sys.maxsize, linewidth=200)
 
-        # pprint (training_set)
-        # pprint (testing_set)
-        train_X, train_Y = list(zip(*training_set))
-        for iteration in zip(train_X, train_Y):
-            for (X, Y) in zip(*iteration):
-                digit_visualization(X, Y)
+        # Experiment Trials
+        for i, (train, test) in enumerate(zip(training_set, testing_set), 1):
+            logger.info("Trial %d", i)
 
+            # Create Model
+            model = Model(name = profile["model_class"])(training_set = train, **profile)
 
-        for train, test in zip(training_set, testing_set):
-            # Experiment Trial
-            model = DigitSVM(train)
-
-            results = model.evaluate(test)
-            print (results)
-            
+            results = model.evaluate(*test)
+            print ("model: %s, trial: %d, Accuracy: %4.2f" % (profile["model_class"], i, results))
+                
