@@ -80,6 +80,7 @@ class KNN(ClassificationModel):
     def fit(self, *training_set):
         train_X, train_Y = self.preprocess(*training_set, is_train = True)
         
+        # Default to metric = "minkowski" and p = 2 => Euclidean
         model = KNeighborsClassifier(n_neighbors = self.n_neighbors, n_jobs = -1)
         model.fit(train_X, train_Y)
 
