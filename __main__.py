@@ -7,9 +7,13 @@ import logging
 
 import numpy as np
 
+import warnings
+
 import scipy
 import scipy.io
 import scipy.stats
+
+from sklearn.exceptions import DataConversionWarning
 
 from pprint import pprint
 
@@ -28,6 +32,8 @@ def Model(name):
     return globals()[name]
 
 if __name__ == "__main__":
+    # Supress sklearn DataConversionWarning
+    warnings.filterwarnings(action='ignore', category=DataConversionWarning)
     # Log Level
     # logging.basicConfig(level=logging.INFO)
     logging.basicConfig(level=logging.DEBUG)
@@ -59,5 +65,5 @@ if __name__ == "__main__":
             model = Model(name = profile["model_class"])(training_set = train, **profile)
 
             results = model.evaluate(*test)
-            print ("model: %s, trial: %d, Accuracy: %4.2f" % (profile["model_class"], i, results))
+            print ("profile: %s, model: %s, trial: %d, Accuracy: %.4f" % (profile_name, profile["model_class"], i, results))
                 

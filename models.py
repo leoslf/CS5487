@@ -5,9 +5,11 @@ import numpy as np
 import scipy
 
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -19,8 +21,8 @@ from utils import dump_dataset
 logger = logging.getLogger(__name__)
 
 class ClassificationModel:
-    def __init__(self, preprocessing_chain, preprocessing_options, training_set, **kwargs):
-        self.preprocessor = Preprocessor(preprocessing_chain, preprocessing_options, training_set)
+    def __init__(self, preprocessing_chain_after_squaring, preprocessing_chain_after_flattening, preprocessing_options, training_set, **kwargs):
+        self.preprocessor = Preprocessor(preprocessing_chain_after_squaring, preprocessing_chain_after_flattening, preprocessing_options, training_set)
         self.kwargs = kwargs
         self.__dict__.update(kwargs)
         if training_set is not None:
@@ -56,33 +58,50 @@ class ClassificationModel:
         print (classification_report(test_Y, prediction))
         return correct_count / float(len(test_Y))
 
-class SVM(ClassificationModel):
+    @property
+    def grid_search(self) -> bool:
+        return hasattr(self, "param_grid") and len(self.best_parameters) == 0
+
+    @property
+    def base_model(self):
+        raise NotImplementedError
+
     def fit(self, *training_set):
         train_X, train_Y = self.preprocess(*training_set, is_train = True)
-        
-        model = SVC(gamma = self.gamma, **self.best_parameters)
 
-        if len(self.best_parameters) == 0:
+        model = self.base_model
+
+        if self.grid_search:
             # Cross-validation is included
-            model = GridSearchCV(model, self.param_grid, cv = self.cv, n_jobs = -1, refit = True, verbose = 3)
-        # print (training_set)
+            model = GridSearchCV(model, self.param_grid, **self.gridsearch_param)
+
         model.fit(train_X, train_Y)
 
-        if len(self.best_parameters) == 0:
-            # logger.info("GridSearchCV results: %s", dict(model.cv_results_))
+        if self.grid_search:
             logger.info("GridSearchCV best_params_: %s", model.best_params_)
             logger.info("GridSearchCV best_estimator_: %s", model.best_estimator_)
 
         self.model = model
 
 
+class SVM(ClassificationModel):
+    @property
+    def base_model(self):
+        return SVC(gamma = self.gamma, **self.best_parameters)
+
+
 class KNN(ClassificationModel):
-    def fit(self, *training_set):
-        train_X, train_Y = self.preprocess(*training_set, is_train = True)
-        
+    @property
+    def base_model(self):
         # Default to metric = "minkowski" and p = 2 => Euclidean
-        model = KNeighborsClassifier(n_neighbors = self.n_neighbors, n_jobs = -1)
-        model.fit(train_X, train_Y)
+        return KNeighborsClassifier(n_jobs = -1, **self.best_parameters)
 
-        self.model = model
+class FishersDiscriminant(ClassificationModel):
+    @property
+    def base_model(self):
+        return LinearDiscriminantAnalysis(**self.best_parameters)
 
+class NaiveBayesGaussian(ClassificationModel):
+    @property
+    def base_model(self):
+        return GaussianNB(**self.best_parameters)

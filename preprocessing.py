@@ -10,12 +10,23 @@ from utils import (compose, methodgetter, vectorize, log)
 
 class Preprocessor:
     """ Encapsulation of Preprocessing Procedures """
-    def __init__(self, methodname_chain, options, training_set):
-        self.methodname_chain = methodname_chain
+    def __init__(self, methodname_chain_after_squaring, methodname_chain_after_flattening, options, training_set):
+        # update __dict__
         self.__dict__.update(options)
+
+        # preprocessing sequence
+        self.methodname_chain_after_squaring, self.methodname_chain_after_flattening = methodname_chain_after_squaring, methodname_chain_after_flattening
+
+        # preserve training_set
         train_X, train_Y = self.training_set = training_set
+
+        # States
         self.scaler = StandardScaler().fit(train_X)
         self.PCA = PCA().fit(train_X)
+
+    @property
+    def methodname_chain(self):
+        return ["squaring"] + self.methodname_chain_after_squaring + ["flattening"] + self.methodname_chain_after_flattening
 
     def _moment(self, image):
         x_len, y_len = image.shape
@@ -56,8 +67,6 @@ class Preprocessor:
                         \alpha = \frac{Cov(X, Y)}{Var(X)}
 
         """
-        # print (image)
-        # image = image.reshape((side_length, side_length)).T
         mu, cov_matrix, alpha = self._moment(image)
         affine_matrix = np.array([[1, 0], [alpha, 1]])
         offset = mu - affine_matrix @ (np.array(image.shape) / 2.0)
@@ -67,7 +76,6 @@ class Preprocessor:
     # @log
     @vectorize
     def squaring(self, x):
-        # print (x.shape)
         return x.reshape(self.img_shape, order="F")
 
     # @log
