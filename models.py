@@ -1,5 +1,7 @@
 import logging
 
+import time
+
 import numpy as np
 
 import scipy
@@ -51,12 +53,15 @@ class ClassificationModel:
         return self.model.predict(test_X)
 
     def evaluate(self, test_X, test_Y):
+        start_time = time.time()
         prediction = self.predict(test_X)
+        end_time = time.time()
+
         correct_count = np.count_nonzero(prediction == test_Y.flatten())
         print ("model: %s" % self.model_class)
         print (confusion_matrix(test_Y, prediction))
         print (classification_report(test_Y, prediction))
-        return correct_count / float(len(test_Y))
+        return correct_count / float(len(test_Y)), end_time - start_time
 
     @property
     def grid_search(self) -> bool:
@@ -75,11 +80,16 @@ class ClassificationModel:
             # Cross-validation is included
             model = GridSearchCV(model, self.param_grid, **self.gridsearch_param)
 
+        start_time = time.time()
         model.fit(train_X, train_Y)
+        end_time  = time.time()
+        self.training_time = end_time - start_time
 
         if self.grid_search:
             logger.info("GridSearchCV best_params_: %s", model.best_params_)
             logger.info("GridSearchCV best_estimator_: %s", model.best_estimator_)
+
+            self.training_time = model.cv_results_["mean_fit_time"][model.best_index_]
 
         self.model = model
 

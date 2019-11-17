@@ -25,6 +25,10 @@ class Preprocessor:
         self.PCA = PCA().fit(train_X)
 
     @property
+    def optional_chain(self):
+        return self.methodname_chain_after_squaring + self.methodname_chain_after_flattening
+
+    @property
     def methodname_chain(self):
         return ["squaring"] + self.methodname_chain_after_squaring + ["flattening"] + self.methodname_chain_after_flattening
 

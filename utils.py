@@ -7,6 +7,9 @@ from functools import partial, reduce
 import configparser
 import json
 
+import itertools
+import operator
+
 import logging
 
 import numpy as np
@@ -55,6 +58,23 @@ def digit_visualization(X, Y):
 def dump_dataset(X, Y):
     for (x, y) in zip(X, Y.flatten()):
         digit_visualization(x, y)
+
+def preprocessing_chain_combinations(profile):
+    a, b = profile["preprocessing_chain_after_squaring"], profile["preprocessing_chain_after_flattening"]
+    merged = a + b
+    merged_length = len(merged)
+
+    for r in range(profile["preprocessing_combination_min"], merged_length + 1):
+        for indices in itertools.combinations(range(merged_length), r):
+            a_indices, b_indices = [i for i in indices if len(indices) > 0 and i < len(a)], [i - len(a) for i in indices if len(indices) > 0 and i >= len(a)]
+
+            subprofile = profile.copy()
+            subprofile["preprocessing_chain_after_squaring"] = [a[i] for i in a_indices]
+            subprofile["preprocessing_chain_after_flattening"] = [b[i] for i in b_indices]
+
+            yield subprofile
+
+
 
 
 def load_json(key, value):
