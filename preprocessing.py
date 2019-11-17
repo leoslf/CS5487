@@ -1,7 +1,7 @@
 import numpy as np
 
 import scipy
-from scipy.ndimage import interpolation
+from scipy.ndimage import interpolation, gaussian_filter
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
@@ -74,6 +74,9 @@ class Preprocessor:
     @vectorize
     def flattening(self, x):
         return x.flatten(order="F")
+
+    def blurring(self, x):
+        return gaussian_filter(x, self.blur_sigma)
 
     # @log
     def normalizing(self, X):
