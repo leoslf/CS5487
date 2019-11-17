@@ -42,10 +42,10 @@ class ClassificationModel:
     def _train(self, *argv, **kwargs):
         raise NotImplementedError
 
-    def fit(self, *training_set):
-        # Cross-validation
-        training_set, validation_set = self.split(training_set)
-        self.model = self._train(training_set, validation_set)
+    # def fit(self, *training_set):
+    #     # Cross-validation
+    #     training_set, validation_set = self.split(training_set)
+    #     self.model = self._train(training_set, validation_set)
 
     def predict(self, test_X):
         """ Predicts the test """
@@ -72,7 +72,9 @@ class ClassificationModel:
         raise NotImplementedError
 
     def fit(self, *training_set):
+        preprocessing_start = time.time()
         train_X, train_Y = self.preprocess(*training_set, is_train = True)
+        preprocessing_end = time.time()
 
         model = self.base_model
 
@@ -90,6 +92,8 @@ class ClassificationModel:
             logger.info("GridSearchCV best_estimator_: %s", model.best_estimator_)
 
             self.training_time = model.cv_results_["mean_fit_time"][model.best_index_]
+
+        self.training_time += preprocessing_end - preprocessing_start
 
         self.model = model
 
