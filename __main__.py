@@ -5,6 +5,8 @@ import operator
 
 import logging
 
+import json
+
 import numpy as np
 
 import warnings
@@ -48,19 +50,25 @@ if __name__ == "__main__":
     config = ClassificationConfig("config.ini")
 
     accuracies = []
+    challenge_accuracies = []
 
     # Profiles
     for profile_name, profile in config.profiles.items():
         # Load dataset
-        dataset = load_dataset(profile)
+        dataset, challengeset = load_dataset(profile)
 
         digits_vec, digits_label, train_indices, test_indices = operator.itemgetter("digits_vec", "digits_labels", "trainset", "testset")(dataset)
         # Transpose X's, since numpy is row-based
         digits_vec = digits_vec.T
         digits_label = digits_label.T
 
+        cdigits_vec, cdigits_label = operator.itemgetter("cdigits_vec", "cdigits_labels")(challengeset)
+        cdigits_vec = cdigits_vec.T
+        cdigits_label = cdigits_label.T
+
         # trial
         training_set, testing_set = [dataset_slicing(digits_vec, digits_label, indices_set, index_start = 1) for indices_set in [train_indices, test_indices]]
+        challenge_set = (cdigits_vec, cdigits_label)
 
 
         for sub_profile in preprocessing_chain_combinations(profile):
@@ -75,8 +83,14 @@ if __name__ == "__main__":
                 results, testing_time = model.evaluate(*test)
                 print ("profile: %s, model: %s, trial: %d, Accuracy: %.4f, training_time: %4.2f, testing_time: %4.2f, optional_chain: %s" % (profile_name, profile["model_class"], i, results, model.training_time, testing_time, model.preprocessor.optional_chain))
 
+
                 accuracies.append(dict(profile=profile_name, model=profile["model_class"], trial=i, accuracy=results, training_time = model.training_time, testing_time = testing_time, preprocess_chain=model.preprocessor.optional_chain))
 
+                challenge_results, challenge_testing_time = model.evaluate(*challenge_set)
+                print ("profile: %s, model: %s, trial: %d, Challenge Set Accuracy: %.4f, training_time: %4.2f, challenge_testing_time: %4.2f, optional_chain: %s" % (profile_name, profile["model_class"], i, challenge_results, model.training_time, challenge_testing_time, model.preprocessor.optional_chain))
+
+                challenge_accuracies.append(dict(profile=profile_name, model=profile["model_class"], trial=i, accuracy=challenge_results, training_time = model.training_time, testing_time = challenge_testing_time, preprocess_chain=model.preprocessor.optional_chain))
 
     print (json.dumps(accuracies))
+    print (json.dumps(challenge_accuracies))
                     

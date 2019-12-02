@@ -43,8 +43,16 @@ def methodgetter(obj, method_names):
 def working_dir(filename):
     return os.path.join(dirname(realpath(__file__)), filename)
 
+def dataset_filenames(profile):
+    return operator.itemgetter("dataset_filename", "challengeset_filename")(profile)
+
+def describe_dataset(profile):
+    filenames = dataset_filenames(profile)
+    return list(map(scipy.io.whosmat, filenames))
+
 def load_dataset(profile):
-    return scipy.io.loadmat(profile["dataset_filename"])
+    filenames = dataset_filenames(profile)
+    return list(map(scipy.io.loadmat, filenames))
 
 def dataset_slicing(X, Y, indices_set, transpose=False, index_start = 0):
     if transpose:
@@ -63,8 +71,13 @@ def preprocessing_chain_combinations(profile):
     a, b = profile["preprocessing_chain_after_squaring"], profile["preprocessing_chain_after_flattening"]
     merged = a + b
     merged_length = len(merged)
+    
+    # Handle case when preprocessing_combination_min == -1 => no subsets are tested
+    preprocessing_combination_min = profile["preprocessing_combination_min"] 
+    if preprocessing_combination_min < 0:
+        preprocessing_combination_min = merged_length
 
-    for r in range(profile["preprocessing_combination_min"], merged_length + 1):
+    for r in range(preprocessing_combination_min, merged_length + 1):
         for indices in itertools.combinations(range(merged_length), r):
             a_indices, b_indices = [i for i in indices if len(indices) > 0 and i < len(a)], [i - len(a) for i in indices if len(indices) > 0 and i >= len(a)]
 
@@ -124,6 +137,9 @@ class ClassificationConfig:
             profile.update(self[name])
             if "dataset" in profile:
                 profile["dataset_filename"] = self.common["filename"] % dict(name = profile["dataset"])
+            if "challengeset" in profile:
+                profile["challengeset_filename"] = self.common["filename"] % dict(name = profile["challengeset"])
 
-        return profiles
+
+        return { name: profile for (name, profile) in profiles.items() if profile["enabled"] }
 
