@@ -158,7 +158,7 @@ from sklearn.decomposition import PCA
 pca_90 = PCA(0.95)
 pca_90.fit(new_digit_sets)
 new_digit_sets_pca = pca_90.transform(new_digit_sets)
-new_digit_sets_pca = pca_90.transform(new_digit_sets)
+
 
 
 # In[73]:
