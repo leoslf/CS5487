@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 model = Model(name = profile["model_class"])(training_set = train, **sub_profile)
 
                 results, testing_time = model.evaluate(*test)
-                print ("profile: %s, model: %s, trial: %d, Accuracy: %.4f, training_time: %4.2f, testing_time: %4.2f, optional_chain: %s" % (profile_name, profile["model_class"], i, results, model.training_time, testing_time, model.preprocessor.optional_chain))
+                print ("profile: %s, model: %s, trial: %d, Accuracy: %.4f, Preprocessing_time: %4.2f, training_time: %4.2f, testing_time: %4.2f, optional_chain: %s" % (profile_name, profile["model_class"], i, results, model.preprocessing_time, model.training_time, testing_time, model.preprocessor.optional_chain))
 
 
                 accuracies.append(dict(profile=profile_name, model=profile["model_class"], trial=i, accuracy=results, training_time = model.training_time, testing_time = testing_time, preprocess_chain=model.preprocessor.optional_chain))

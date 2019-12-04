@@ -49,10 +49,13 @@ class ClassificationModel:
 
     def predict(self, test_X):
         """ Predicts the test """
-        test_X, _ = self.preprocess(test_X, None)
+        #test_X, _ = self.preprocess(test_X, None)
         return self.model.predict(test_X)
 
     def evaluate(self, test_X, test_Y):
+        
+        test_X, _ = self.preprocess(test_X, None)
+        
         start_time = time.time()
         prediction = self.predict(test_X)
         end_time = time.time()
@@ -72,10 +75,12 @@ class ClassificationModel:
         raise NotImplementedError
 
     def fit(self, *training_set):
+        
         preprocessing_start = time.time()
         train_X, train_Y = self.preprocess(*training_set, is_train = True)
         preprocessing_end = time.time()
-
+        self.preprocessing_time = preprocessing_end - preprocessing_start
+        
         model = self.base_model
 
         if self.grid_search:
@@ -93,8 +98,8 @@ class ClassificationModel:
 
             self.training_time = model.cv_results_["mean_fit_time"][model.best_index_]
 
-        self.training_time += preprocessing_end - preprocessing_start
-
+        #self.training_time += preprocessing_end - preprocessing_start
+        
         self.model = model
 
 

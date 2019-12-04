@@ -22,7 +22,7 @@ class Preprocessor:
 
         # States
         self.scaler = StandardScaler().fit(train_X)
-        self.PCA = PCA().fit(train_X)
+        self.PCA = PCA(self.pca_components).fit(train_X)
 
     @property
     def optional_chain(self):
@@ -88,6 +88,7 @@ class Preprocessor:
         return x.flatten(order="F")
 
     def blurring(self, x):
+        #print("Blurring: %s" %self.blur_sigma)
         return gaussian_filter(x, self.blur_sigma)
 
     # @log
@@ -95,6 +96,7 @@ class Preprocessor:
         return self.scaler.transform(X)
 
     def pca(self, X):
+        print("PCA Components %f" %self.PCA.n_components_)
         return self.PCA.transform(X)
 
     @property
